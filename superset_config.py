@@ -15,11 +15,28 @@ JWT_ACCESS_TOKEN_EXPIRES = 60 * 60 * 24  # 1 day in seconds
 
 # Superset Metadata database URI
 # Set SQLite database to current directory
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(BASE_DIR, 'superset.db')
+# BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+# SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(BASE_DIR, 'superset.db')
 
 # For async queries specifically
 GLOBAL_ASYNC_QUERIES_JWT_SECRET = os.getenv("GLOBAL_ASYNC_QUERIES_JWT_SECRET", "5D6Tw4aV5yhrXBMjLb29Y7HA7Rc6awRrgx0XKnpI8lTU4udLm0p9Jrry")
+
+# Web server timeout (should be lower than your load balancer timeout)
+SUPERSET_WEBSERVER_TIMEOUT = 60  # in seconds
+
+# If running behind a proxy/load balancer that uses X-Forwarded headers
+# Disable SSL
+ENABLE_PROXY_FIX = False
+
+# Optional: Disable flask-compress if not using Gunicorn
+# COMPRESS_REGISTER = False
+
+# Specify any other needed configurations
+# ROW_LIMIT = 5000  # Default row limit for queries
+
+# Enable debug mode for local testing
+DEBUG = True
+
 
 # -----------------------------------------------------------------
 
