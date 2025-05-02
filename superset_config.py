@@ -13,6 +13,11 @@ JWT_COOKIE_SECURE = True
 JWT_COOKIE_CSRF_PROTECT = True
 JWT_ACCESS_TOKEN_EXPIRES = 60 * 60 * 24  # 1 day in seconds
 
+# Superset Metadata database URI
+# Set SQLite database to current directory
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(BASE_DIR, 'superset.db')
+
 # For async queries specifically
 GLOBAL_ASYNC_QUERIES_JWT_SECRET = os.getenv("GLOBAL_ASYNC_QUERIES_JWT_SECRET", "5D6Tw4aV5yhrXBMjLb29Y7HA7Rc6awRrgx0XKnpI8lTU4udLm0p9Jrry")
 
