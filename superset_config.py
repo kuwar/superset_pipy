@@ -1,4 +1,6 @@
 import os
+from celery.schedules import crontab
+from flask_caching.backends.rediscache import RedisCache
 
 
 # ----------------------------------------------------------------
@@ -8,7 +10,7 @@ import os
 SECRET_KEY=os.getenv("SECRET_KEY", "j2PsZEfNl1ztcp+OGpVAqj8rCKVvVk8b9IYiwCCowXE89xXVC/llEFxV")
 JWT_SECRET = os.getenv("JWT_SECRET", "HSCwYSIQLv+S2EJ7sOXxUvW+A7E4SpbUiRs82EkKsuf/fYzRdCgCDfN0")
 
-# You should also set these related JWT configurations
+# set related JWT configurations
 JWT_COOKIE_SECURE = True
 JWT_COOKIE_CSRF_PROTECT = True
 JWT_ACCESS_TOKEN_EXPIRES = 60 * 60 * 24  # 1 day in seconds
@@ -17,6 +19,7 @@ JWT_ACCESS_TOKEN_EXPIRES = 60 * 60 * 24  # 1 day in seconds
 # Set SQLite database to current directory
 # BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 # SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(BASE_DIR, 'superset.db')
+# SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:postgres@localhost:5432/superset_metadata'
 
 # For async queries specifically
 GLOBAL_ASYNC_QUERIES_JWT_SECRET = os.getenv("GLOBAL_ASYNC_QUERIES_JWT_SECRET", "5D6Tw4aV5yhrXBMjLb29Y7HA7Rc6awRrgx0XKnpI8lTU4udLm0p9Jrry")
@@ -32,13 +35,13 @@ ENABLE_PROXY_FIX = False
 # COMPRESS_REGISTER = False
 
 # Specify any other needed configurations
-# ROW_LIMIT = 5000  # Default row limit for queries
+ROW_LIMIT = 5000  # Default row limit for queries
 
 # Enable debug mode for local testing
 DEBUG = True
 
 
-# -----------------------------------------------------------------
+# ************************************************************
 
 # ----------------------------------------------------------------
 # Enabling file upload
@@ -78,7 +81,7 @@ FEATURE_FLAGS = {
     
     # Other useful features
     "ENABLE_TEMPLATE_PROCESSING": True,
-    "GLOBAL_ASYNC_QUERIES": False,
+    "GLOBAL_ASYNC_QUERIES": True,
     "ENABLE_REACT_CRUD_VIEWS": True,
     "ALLOW_FULL_CSV_EXPORT": True, 
     "ALLOW_ADHOC_SUBQUERY": True,
@@ -115,19 +118,17 @@ CONTENT_SECURITY_POLICY = {
 # Validate CSV before importing
 VALIDATE_TABLES = True
 
-# ----------------------------------------------------------------
+# ************************************************************
 
 # ----------------------------------------------------------------
 # Enabling various database engines
 # ----------------------------------------------------------------
+
 # Increase timeout for database connections
 SQLLAB_TIMEOUT = 60
 
 # Enable verbose query logging
 QUERY_LOGGER_VERBOSITY = 1
-
-# Disable results backend to troubleshoot connection issues
-RESULTS_BACKEND_USE_MSGPACK = False
 
 PREFERRED_DATABASES = [
     "PostgreSQL",
@@ -137,6 +138,94 @@ PREFERRED_DATABASES = [
     # other databases...
 ]
 
+# ************************************************************
+
 
 # ----------------------------------------------------------------
+# Configure Superset to Use Redis and Celery
+# ----------------------------------------------------------------
+# 
+# enable support for long-running queries that execute beyond the typical web request's timeout (30-60 seconds), 
+# you need to configure an asynchronous backend for Superset consisting of Celery workers and a message queue (Redis) 
+
+# Redis configuration
+REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
+REDIS_PORT = os.getenv('REDIS_PORT', '6379')
+REDIS_CELERY_DB = os.getenv('REDIS_CELERY_DB', '0')
+REDIS_RESULTS_DB = os.getenv('REDIS_RESULTS_DB', '1')
+REDIS_CACHE_DB = os.getenv('REDIS_CACHE_DB', '2')  # DB for caching
+
+# Celery Configuration
+class CeleryConfig(object):
+    broker_url = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_CELERY_DB}"
+    imports = (
+        "superset.sql_lab",
+        "superset.tasks.scheduler",
+        "superset.tasks.cache",  # Added for cache warming
+    )
+    result_backend = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_RESULTS_DB}"
+    worker_prefetch_multiplier = 10
+    task_acks_late = True
+    task_annotations = {
+        "sql_lab.get_sql_results": {
+            "rate_limit": "100/s",
+        },
+    }
+
+CELERY_CONFIG = CeleryConfig
+
+# Results backend - where query results are stored
+RESULTS_BACKEND = RedisCache(
+    host=REDIS_HOST,
+    port=int(REDIS_PORT),
+    key_prefix='superset_results',
+    db=int(REDIS_RESULTS_DB)
+)
+
+# Use MessagePack for serialization (improves performance)
+# Disable results backend to troubleshoot connection issues
+# Set to True when using Redis as results backend
+RESULTS_BACKEND_USE_MSGPACK = True
+
+# Cache Configuration for dashboards, filters, etc.
+# Use a different Redis DB for caching
+CACHE_CONFIG = {
+    'CACHE_TYPE': 'RedisCache',
+    'CACHE_DEFAULT_TIMEOUT': 86400,  # 24 hours
+    'CACHE_KEY_PREFIX': 'superset_filter_cache',
+    'CACHE_REDIS_HOST': REDIS_HOST,
+    'CACHE_REDIS_PORT': int(REDIS_PORT),
+    'CACHE_REDIS_DB': int(REDIS_CACHE_DB),
+}
+
+# Additional cache configurations
+FILTER_STATE_CACHE_CONFIG = {
+    'CACHE_TYPE': 'RedisCache',
+    'CACHE_DEFAULT_TIMEOUT': 86400,
+    'CACHE_KEY_PREFIX': 'superset_filter_cache',
+    'CACHE_REDIS_URL': f'redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_CACHE_DB}'
+}
+
+EXPLORE_FORM_DATA_CACHE_CONFIG = {
+    'CACHE_TYPE': 'RedisCache',
+    'CACHE_DEFAULT_TIMEOUT': 86400,
+    'CACHE_KEY_PREFIX': 'superset_explore_form',
+    'CACHE_REDIS_URL': f'redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_CACHE_DB}'
+}
+
+DATA_CACHE_CONFIG = {
+    'CACHE_TYPE': 'RedisCache',
+    'CACHE_DEFAULT_TIMEOUT': 86400,  # 24 hours
+    'CACHE_KEY_PREFIX': 'superset_data',
+    'CACHE_REDIS_HOST': REDIS_HOST,
+    'CACHE_REDIS_PORT': int(REDIS_PORT),
+    'CACHE_REDIS_DB': int(REDIS_CACHE_DB), 
+}
+
+# macOS specific setting to avoid fork issues
+if os.uname().sysname == 'Darwin':
+    os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
+
+
+# ************************************************************
 
