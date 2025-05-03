@@ -243,3 +243,23 @@ This will provide more detailed logs that might reveal what's happening during t
 
 5. **DuckDB version mismatches**
    - Ensure your duckdb and duckdb-engine packages are compatible versions
+
+## SQLite Warning
+- sqlite+pysqlite does *not* support Decimal objects natively
+- Use `duckdb` or `duckdb-engine` for better compatibility with Apache Superset
+    - SQLite has limitations that make it unsuitable for production use with Superset, especially with async queries
+    - use production-ready databases like PostgreSQL or MySQL for production environments
+
+## Critical Error
+- objc[27170]: +[NSMutableString initialize] may have been in progress in another thread when fork() was called.
+    - This causes Celery worker to crash. It's a macOS-specific issue related to how Python's multiprocessing works with the Objective-C runtime.
+    - ```
+      # Add this to shell profile (.zshrc or .bash_profile)
+      export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+      ```
+    - Change Celery pool implementation (if above doesn't work):
+    ```bash
+    celery --app=superset.tasks.celery_app:app worker --pool=solo -O fair
+    # or
+    celery --app=superset.tasks.celery_app:app worker --pool=threads -O fair -c 4
+    ```
