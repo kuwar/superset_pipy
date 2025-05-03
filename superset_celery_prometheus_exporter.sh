@@ -7,4 +7,4 @@ export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 
 export SUPERSET_CONFIG_PATH=./superset_config.py
 
-celery --app=superset.tasks.celery_app:app worker --loglevel=DEBUG --pool=prefork -O fair -c 4
+celery-prometheus-exporter --broker=redis://localhost:6379/0

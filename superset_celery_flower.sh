@@ -7,4 +7,4 @@ export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 
 export SUPERSET_CONFIG_PATH=./superset_config.py
 
-celery --app=superset.tasks.celery_app:app worker --loglevel=DEBUG --pool=prefork -O fair -c 4
+celery -A superset.tasks.celery_app:app flower --port=5555

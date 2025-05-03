@@ -263,3 +263,13 @@ This will provide more detailed logs that might reveal what's happening during t
     # or
     celery --app=superset.tasks.celery_app:app worker --pool=threads -O fair -c 4
     ```
+
+  # Enabling Async Queries
+
+- Enable Global Async Queries
+  - For dashboard and chart queries, need to enable the "GLOBAL_ASYNC_QUERIES" feature flag in your configuration:
+  ```python
+  FEATURE_FLAGS = {
+      "GLOBAL_ASYNC_QUERIES": True,
+  }
+  ```
