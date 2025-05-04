@@ -1,6 +1,7 @@
 import os
 from celery.schedules import crontab
 from flask_caching.backends.rediscache import RedisCache
+# from superset.tasks.types import FixedExecutor
 
 
 # ----------------------------------------------------------------
@@ -171,6 +172,17 @@ class CeleryConfig(object):
             "rate_limit": "100/s",
         },
     }
+    # only the beat_schedule is relevant to alerts/reports
+    beat_schedule = {
+        "reports.scheduler": {
+            "task": "reports.scheduler",
+            "schedule": crontab(minute="*", hour="*"),
+        },
+        "reports.prune_log": {
+            "task": "reports.prune_log",
+            "schedule": crontab(minute=0, hour=0),
+        },
+    }
 
 CELERY_CONFIG = CeleryConfig
 
@@ -228,4 +240,63 @@ if os.uname().sysname == 'Darwin':
 
 
 # ************************************************************
+
+# ----------------------------------------------------------------
+# Alert/Report Configurations
+# ----------------------------------------------------------------
+
+# How long to keep alert/report state before pruning
+ALERT_REPORTS_WORKING_TIME_OUT_LIMIT = 3600  # 1 hour
+
+# Configure email for sending alerts
+SMTP_HOST = os.getenv("SMTP_HOST", "sandbox.smtp.mailtrap.io")
+SMTP_STARTTLS = True
+SMTP_SSL = False
+SMTP_USER = os.getenv("SMTP_USER", "your-email@gmail.com")
+SMTP_PORT = os.getenv("SMTP_PORT", "587")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "your-password")
+SMTP_MAIL_FROM = os.getenv("SMTP_MAIL_FROM", "your-email@gmail.com")
+# EMAIL_REPORTS_SUBJECT_PREFIX = "[Superset] " # optional - overwrites default value in config.py of "[Report] "
+
+# Optionally configure Slack for notifications
+SLACK_API_TOKEN = os.getenv("SLACK_API_TOKEN", "")
+
+# Screenshots will be taken but no messages actually sent as long as ALERT_REPORTS_NOTIFICATION_DRY_RUN = True
+ALERT_REPORTS_NOTIFICATION_DRY_RUN = False
+ALERT_REPORT_SLACK_V2 = True
+
+WEBDRIVER_TYPE = "chrome"
+# For macOS, specify Chrome binary path
+WEBDRIVER_BINARY = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+WEBDRIVER_OPTION_ARGS = [
+    "--headless",
+    "--no-sandbox",
+    "--disable-dev-shm-usage",
+    "--disable-gpu",
+    "--disable-setuid-sandbox",
+    "--disable-extensions",
+]
+
+# This is for internal use, you can keep http
+WEBDRIVER_BASEURL = "http://localhost:8088" # When running using docker compose use "http://superset_app:8088'
+# This is the link sent to the recipient. Change to your domain, e.g. https://superset.mydomain.com
+WEBDRIVER_BASEURL_USER_FRIENDLY = "http://localhost:8088"
+
+# ALERT_REPORTS_EXECUTORS = [FixedExecutor("admin")]
+
+# Where to store screenshots for reports
+SCREENSHOT_LOCATE_WAIT = 100
+SCREENSHOT_LOAD_WAIT = 600
+
+
+# For creating thumbnails of dashboards for notifications
+THUMBNAIL_SELENIUM_USER = os.getenv("THUMBNAIL_SELENIUM_USER", "admin")
+THUMBNAIL_CACHE_CONFIG = {
+    'CACHE_TYPE': 'RedisCache',
+    'CACHE_KEY_PREFIX': 'superset_thumbnails',
+    'CACHE_DEFAULT_TIMEOUT': 10000,
+    'CACHE_REDIS_URL': f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_CACHE_DB}"
+}
+
+# *************************************************************
 

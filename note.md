@@ -273,3 +273,12 @@ This will provide more detailed logs that might reveal what's happening during t
       "GLOBAL_ASYNC_QUERIES": True,
   }
   ```
+
+# Alert/Report setup
+
+- Chrome/Chromium WebDriver: Superset uses a headless browser to render dashboards for screenshots in reports
+- ```
+  # For Ubuntu/Debian
+  sudo apt-get install -y chromium-browser
+  sudo apt-get install -y chromium-driver
+```
