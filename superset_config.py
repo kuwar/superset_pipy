@@ -20,7 +20,7 @@ JWT_ACCESS_TOKEN_EXPIRES = 60 * 60 * 24  # 1 day in seconds
 # Set SQLite database to current directory
 # BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 # SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(BASE_DIR, 'superset.db')
-# SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:postgres@localhost:5432/superset_metadata'
+SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:postgres@localhost:5432/superset_metadata'
 
 # For async queries specifically
 GLOBAL_ASYNC_QUERIES_JWT_SECRET = os.getenv("GLOBAL_ASYNC_QUERIES_JWT_SECRET", "5D6Tw4aV5yhrXBMjLb29Y7HA7Rc6awRrgx0XKnpI8lTU4udLm0p9Jrry")
