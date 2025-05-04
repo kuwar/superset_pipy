@@ -282,3 +282,13 @@ This will provide more detailed logs that might reveal what's happening during t
   sudo apt-get install -y chromium-browser
   sudo apt-get install -y chromium-driver
 ```
+# Error on taking screenshots
+- Check version of Chrome -> /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --version
+- ```
+Failed taking a screenshot Message: Selenium Manager failed for: /Users/sauravkuwar/Documents/GIT/superset_pipy/venv3.11/lib/python3.11/site-packages/selenium/webdriver/common/macos/selenium-manager --browser chrome --output json --debug.
+The chromedriver version cannot be discovered
+  ```
+- ```
+- Installed chrome driver => brew install chromedriver => Error encountered (Error: Message: session not created: This version of ChromeDriver only supports Chrome version 136
+Current browser version is 135.0.7049.115 with binary path /Applications/Google Chrome.app/Contents/MacOS/Google Chrome)
+
