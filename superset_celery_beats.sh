@@ -5,7 +5,10 @@
 # to address the fork safety issue when restarting
 
 # Load environment variables from .env file
-export "$(grep -v '^#' .env | xargs)"
+# export "$(grep -v '^#' .env | xargs)"
+set -o allexport
+source .env
+set +o allexport
 
 export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 
